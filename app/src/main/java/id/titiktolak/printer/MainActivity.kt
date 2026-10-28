@@ -90,11 +90,31 @@ class MainActivity : Activity() {
 
     private fun requestNeededPermissions() {
         val needed = mutableListOf<String>()
-        if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED)
-            needed.add(Manifest.permission.BLUETOOTH_CONNECT)
-        if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED)
+    
+        if (Build.VERSION.SDK_INT >= 31) {
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH_SCAN)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                needed.add(Manifest.permission.BLUETOOTH_SCAN)
+            }
+    
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                needed.add(Manifest.permission.BLUETOOTH_CONNECT)
+            }
+        }
+    
+        if (Build.VERSION.SDK_INT >= 33 &&
+            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
             needed.add(Manifest.permission.POST_NOTIFICATIONS)
-        if (needed.isNotEmpty()) requestPermissions(needed.toTypedArray(), 101)
+        }
+    
+        if (needed.isNotEmpty()) {
+            requestPermissions(needed.toTypedArray(), 101)
+        }
     }
 
     private fun showPairedDevices() {
