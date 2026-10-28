@@ -68,7 +68,7 @@ class PrintService : Service() {
                 Log.e(tag, "Polling/cetak gagal", e)
                 updateNotification("API dijeda: ${e.message ?: "status printer tidak terbaca"}")
             }
-            try { Thread.sleep(1000) } catch (_: InterruptedException) { }
+            try { Thread.sleep(5000) } catch (_: InterruptedException) { }
         }
     }
 

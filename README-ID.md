@@ -1,6 +1,6 @@
 # Printer Thermal Bridge Android — prototipe 0.1
 
-Aplikasi Android memeriksa status printer lalu polling API setiap 1 detik, kemudian mengirim perintah TSPL ke printer Bluetooth Classic (SPP).
+Aplikasi Android memeriksa status printer lalu polling API setiap 5 detik, kemudian mengirim perintah TSPL ke printer Bluetooth Classic (SPP).
 
 ## Penting sebelum dipakai
 - Versi ini belum diuji ulang pada printer fisik setelah penambahan pemeriksaan status kertas.
@@ -8,7 +8,7 @@ Aplikasi Android memeriksa status printer lalu polling API setiap 1 detik, kemud
 - Nama field API dibuat fleksibel, tetapi perlu dicocokkan dengan respons asli `api.php`.
 - Aplikasi menyimpan ID pesanan yang sudah dicetak di HP untuk mencegah cetak ulang. Karena itu, bila hasil cetak gagal setelah perintah dikirim, perlu reset data aplikasi atau ubah logika pencetakan.
 - Jika printer melaporkan kertas habis atau status printer tidak bisa dibaca, aplikasi menghentikan polling API. Pemeriksaan ini memakai perintah status TSPL `ESC!?`; jika firmware EP807 tidak mendukung respons tersebut, aplikasi akan tetap menjeda API sampai status dapat dibaca. Uji saat printer tersedia.
-- Polling setiap 1 detik berarti hingga 3.600 permintaan per jam saat layanan terus aktif. Pastikan server API cukup ringan; bila server terbebani, naikkan interval.
+- Polling setiap 5 detik berarti hingga 3.600 permintaan per jam saat layanan terus aktif. Pastikan server API cukup ringan; bila server terbebani, naikkan interval.
 - Versi ini tidak mengubah status pesanan di server.
 - Untuk pemakaian toko, uji dengan pesanan dummy terlebih dahulu dan pastikan format serta ukuran kertas benar.
 
