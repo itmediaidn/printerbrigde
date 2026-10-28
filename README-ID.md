@@ -1,21 +1,23 @@
-# TitikTolak Printer Android — prototipe 0.1
+# Printer Thermal Bridge Android — prototipe 0.1
 
-Aplikasi Android polling API website setiap 5 detik, lalu mengirim perintah TSPL ke printer Bluetooth Classic (SPP).
+Aplikasi Android memeriksa status printer lalu polling API setiap 1 detik, kemudian mengirim perintah TSPL ke printer Bluetooth Classic (SPP).
 
 ## Penting sebelum dipakai
-- Ini prototipe awal, belum diuji di perangkat pengguna.
+- Versi ini belum diuji ulang pada printer fisik setelah penambahan pemeriksaan status kertas.
 - Template cetak awal memakai TSPL dengan ukuran sementara `80 x 100 mm`.
 - Nama field API dibuat fleksibel, tetapi perlu dicocokkan dengan respons asli `api.php`.
 - Aplikasi menyimpan ID pesanan yang sudah dicetak di HP untuk mencegah cetak ulang. Karena itu, bila hasil cetak gagal setelah perintah dikirim, perlu reset data aplikasi atau ubah logika pencetakan.
+- Jika printer melaporkan kertas habis atau status printer tidak bisa dibaca, aplikasi menghentikan polling API. Pemeriksaan ini memakai perintah status TSPL `ESC!?`; jika firmware EP807 tidak mendukung respons tersebut, aplikasi akan tetap menjeda API sampai status dapat dibaca. Uji saat printer tersedia.
+- Polling setiap 1 detik berarti hingga 3.600 permintaan per jam saat layanan terus aktif. Pastikan server API cukup ringan; bila server terbebani, naikkan interval.
 - Versi ini tidak mengubah status pesanan di server.
 - Untuk pemakaian toko, uji dengan pesanan dummy terlebih dahulu dan pastikan format serta ukuran kertas benar.
 
 ## Cara build APK hanya menggunakan HP Android
-1. Buka GitHub di browser HP dan buat repository baru bernama `TitikTolakPrinter`.
+1. Buka repository GitHub `printerbrigde` yang sudah digunakan, atau repository proyek yang Anda pilih.
 2. Upload semua file dan folder dari ZIP ini ke repository. Pastikan folder `.github/workflows` ikut ter-upload.
 3. Setelah file masuk ke branch `main`, buka tab **Actions** pada repository.
 4. Pilih workflow **Build Android APK**, tekan **Run workflow** bila perlu.
-5. Tunggu sampai job selesai hijau. Buka hasil run, bagian **Artifacts**, lalu unduh `TitikTolakPrinter-debug`.
+5. Tunggu sampai job selesai hijau. Buka hasil run, bagian **Artifacts**, lalu unduh artifact APK dari workflow.
 6. Ekstrak ZIP artifact dan instal `app-debug.apk`. Android mungkin meminta izin instal aplikasi dari browser/File Manager.
 
 ## Penggunaan
