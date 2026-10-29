@@ -297,6 +297,30 @@ class MainActivity : Activity() {
     }
 
     private fun startPrinting() {
+        if (Build.VERSION.SDK_INT >= 31) {
+            val scanGranted =
+                checkSelfPermission(
+                    Manifest.permission.BLUETOOTH_SCAN
+                ) == PackageManager.PERMISSION_GRANTED
+    
+            val connectGranted =
+                checkSelfPermission(
+                    Manifest.permission.BLUETOOTH_CONNECT
+                ) == PackageManager.PERMISSION_GRANTED
+    
+            if (!scanGranted || !connectGranted) {
+                requestNeededPermissions()
+    
+                Toast.makeText(
+                    this,
+                    "Izinkan akses perangkat Bluetooth, lalu tekan Mulai lagi.",
+                    Toast.LENGTH_LONG
+                ).show()
+    
+                return
+            }
+        }
+        
         val api = apiInput.text.toString().trim()
         val mac = macInput.text.toString().trim()
         if (!api.startsWith("https://") && !api.startsWith("http://")) {
