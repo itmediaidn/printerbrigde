@@ -46,29 +46,32 @@ class PrintService : Service() {
     private fun pollLoop() {
         while (running) {
             try {
-                // Fail-safe: jangan mengambil pesanan jika status printer tidak bisa dibaca.
-                when (checkPrinterStatus()) {
-                    PrinterState.READY -> {
-                        updateNotification("Printer siap • memeriksa pesanan…")
-                        val orders = fetchOrders()
-                        for (order in orders) {
-                            if (!running) break
-                            val id = orderId(order)
-                            if (id.isBlank() || alreadyPrinted(id)) continue
-                            updateNotification("Mencetak pesanan #$id")
-                            printOrder(order, id)
-                            rememberPrinted(id)
-                            updateNotification("Berhasil mencetak #$id")
-                        }
-                    }
-                    PrinterState.PAPER_OUT -> updateNotification("Kertas habis • API dijeda")
-                    PrinterState.NOT_READY -> updateNotification("Printer belum siap • API dijeda")
+                updateNotification("Memeriksa pesanan…")
+                val orders = fetchOrders()
+    
+                for (order in orders) {
+                    if (!running) break
+    
+                    val id = orderId(order)
+                    if (id.isBlank() || alreadyPrinted(id)) continue
+    
+                    updateNotification("Mencetak pesanan #$id")
+                    printOrder(order, id)
+                    rememberPrinted(id)
+                    updateNotification("Berhasil mencetak #$id")
                 }
             } catch (e: Exception) {
                 Log.e(tag, "Polling/cetak gagal", e)
-                updateNotification("API dijeda: ${e.message ?: "status printer tidak terbaca"}")
+                updateNotification(
+                    "Gagal: ${e.message ?: "koneksi atau pencetakan"}"
+                )
             }
-            try { Thread.sleep(5000) } catch (_: InterruptedException) { }
+    
+            try {
+                Thread.sleep(5000)
+            } catch (_: InterruptedException) {
+                if (!running) break
+            }
         }
     }
 
@@ -162,30 +165,49 @@ class PrintService : Service() {
     }
 
     private fun printOrder(o: JSONObject, id: String) {
-        val adapter = BluetoothAdapter.getDefaultAdapter() ?: throw Exception("Bluetooth tidak tersedia")
-        if (Build.VERSION.SDK_INT >= 31 && checkSelfPermission(android.Manifest.permission.BLUETOOTH_CONNECT) != android.content.pm.PackageManager.PERMISSION_GRANTED)
+        val adapter = BluetoothAdapter.getDefaultAdapter()
+            ?: throw Exception("Bluetooth tidak tersedia")
+    
+        if (Build.VERSION.SDK_INT >= 31 &&
+            checkSelfPermission(
+                android.Manifest.permission.BLUETOOTH_CONNECT
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
             throw Exception("Izin Bluetooth belum diberikan")
-        if (!adapter.isEnabled) throw Exception("Aktifkan Bluetooth Android")
-        val device: BluetoothDevice = adapter.getRemoteDevice(printerMac)
+        }
+    
+        if (!adapter.isEnabled) {
+            throw Exception("Aktifkan Bluetooth Android")
+        }
+    
+        if (printerMac.isBlank()) {
+            throw Exception("Pilih printer Bluetooth terlebih dahulu")
+        }
+    
+        val device = adapter.getRemoteDevice(printerMac)
         val socket = device.createRfcommSocketToServiceRecord(sppUuid)
+    
+        if (Build.VERSION.SDK_INT >= 31 &&
+            checkSelfPermission(
+                android.Manifest.permission.BLUETOOTH_SCAN
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            throw Exception("Izin Bluetooth scan belum diberikan")
+        }
+    
         adapter.cancelDiscovery()
         socket.connect()
+    
         try {
-            // Periksa lagi tepat sebelum mengirim pekerjaan cetak.
             val output = socket.outputStream
-            output.write(byteArrayOf(0x1B, 0x21, 0x3F)) // ESC ! ?
-            output.flush()
-            val statusByte = readStatusByte(socket)
-            if (statusByte < 0) throw Exception("Status printer tidak terbaca; pesanan tidak ditandai tercetak")
-            if ((statusByte and 0x04) != 0) throw Exception("Kertas habis; pesanan ditahan dan tidak ditandai tercetak")
-            if (statusByte != 0) throw Exception("Printer belum siap (status 0x${statusByte.toString(16)}); pesanan ditahan")
-
-            output.write(buildTspl(o, id).toByteArray(Charset.forName("GB18030")))
+            output.write(
+                buildTspl(o, id).toByteArray(Charset.forName("GB18030"))
+            )
             output.flush()
             Thread.sleep(350)
-        } catch (e: java.net.SocketTimeoutException) {
-            throw Exception("Status printer tidak didukung/tidak terbaca; pesanan tidak ditandai tercetak")
-        } finally { socket.close() }
+        } finally {
+            socket.close()
+        }
     }
 
     private fun buildTspl(o: JSONObject, id: String): String {
