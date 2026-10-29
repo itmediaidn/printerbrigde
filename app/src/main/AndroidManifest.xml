@@ -1,4 +1,3 @@
-```xml
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <!-- Izin Bluetooth untuk Android 12 ke atas -->
@@ -53,4 +52,3 @@
     </application>
 
 </manifest>
-```
