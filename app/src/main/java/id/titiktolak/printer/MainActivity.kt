@@ -75,7 +75,7 @@ class MainActivity : Activity() {
         apiInput = EditText(this).apply {
             hint = "https://alamat-toko.com/api.php"
             textSize = 14f
-            singleLine = true
+            setSingleLine(true)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
             setText(getPreferences(0).getString("api_url", "https://titiktolak.com/printer-test/api.php"))
             setTextColor(ink)
@@ -89,7 +89,7 @@ class MainActivity : Activity() {
         macInput = EditText(this).apply {
             hint = "Pilih printer dari daftar perangkat"
             textSize = 14f
-            singleLine = true
+            setSingleLine(true)
             inputType = android.text.InputType.TYPE_CLASS_TEXT
             setText(getPreferences(0).getString("printer_mac", ""))
             setTextColor(ink)
