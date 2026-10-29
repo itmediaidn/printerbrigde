@@ -209,47 +209,136 @@ class PrintService : Service() {
             socket.close()
         }
     }
-
+    
     private fun buildTspl(o: JSONObject, id: String): String {
-        val customer = firstString(o, "customer", "customer_name", "name", "pelanggan").ifBlank { "Pelanggan" }
-        val created = firstString(o, "created_at", "date", "time")
+        val toko = firstString(
+            o, "toko", "store_name", "nama_toko"
+        ).ifBlank { "Amore Food" }
+    
+        val customer = firstString(
+            o, "customer", "customer_name", "name", "pelanggan"
+        ).ifBlank { "Pelanggan" }
+    
+        val tanggal = firstString(
+            o, "tanggal", "order_date", "created_at", "date", "time"
+        )
+    
         val items = when {
             o.opt("items") is JSONArray -> o.getJSONArray("items")
             o.opt("details") is JSONArray -> o.getJSONArray("details")
             else -> JSONArray()
         }
+    
         val lines = mutableListOf<String>()
+    
         lines += "SIZE 80 mm,100 mm"
         lines += "GAP 2 mm,0 mm"
         lines += "DIRECTION 1"
         lines += "CLS"
-        lines += """TEXT 30,25,"3",0,1,1,"TITIKTOLAK""""
-        lines += """TEXT 30,70,"3",0,1,1,"PESANAN #${safe(id)}""""
-        lines += """TEXT 30,110,"2",0,1,1,"Nama: ${safe(customer)}""""
-        if (created.isNotBlank()) lines += """TEXT 30,145,"2",0,1,1,"${safe(created)}""""
-        lines += """TEXT 30,185,"2",0,1,1,"------------------------------""""
-        var y = 220
+    
+        // Judul toko
+        lines += """TEXT 30,25,"3",0,1,1,"${safe(toko)}""""
+    
+        // Informasi pesanan
+        lines += """TEXT 30,95,"3",0,1,1,"PESANAN #${safe(id)}""""
+        lines += """TEXT 30,140,"2",0,1,1,"Nama: ${safe(customer)}""""
+    
+        if (tanggal.isNotBlank()) {
+            lines += """TEXT 30,175,"2",0,1,1,"Tanggal: ${safe(tanggal)}""""
+        }
+    
+        lines += """TEXT 30,215,"2",0,1,1,"--------------------------------""""
+    
+        var y = 250
+        var grandTotal = 0L
+    
+        // Detail item, harga satuan, dan subtotal
         for (i in 0 until items.length()) {
             val item = items.optJSONObject(i) ?: continue
-            val name = firstString(item, "name", "product", "item", "nama").ifBlank { "Item" }
-            val qty = firstString(item, "qty", "quantity", "jumlah").ifBlank { "1" }
-            val price = firstString(item, "price", "subtotal", "harga")
-            lines += """TEXT 30,$y,"2",0,1,1,"${safe(name).take(26)} x${safe(qty)}""""
+    
+            val name = firstString(
+                item, "name", "product", "item", "nama"
+            ).ifBlank { "Item" }
+    
+            val qty = firstString(
+                item, "qty", "quantity", "jumlah"
+            ).toIntOrNull()?.coerceAtLeast(0) ?: 1
+    
+            val priceText = firstString(
+                item, "price", "harga", "harga_satuan"
+            )
+    
+            // Mendukung harga numerik seperti 15000 atau string Rp 15.000
+            val price = priceText
+                .replace(Regex("[^0-9]"), "")
+                .toLongOrNull() ?: 0L
+    
+            val subtotal = price * qty
+            grandTotal += subtotal
+    
+            // Nama barang dan jumlah
+            lines += """TEXT 30,$y,"2",0,1,1,"${safe(name).take(24)} x$qty""""
             y += 32
-            if (price.isNotBlank()) {
-                lines += """TEXT 50,$y,"1",0,1,1,"${safe(price)}""""
-                y += 27
+    
+            // Harga satuan
+            if (priceText.isNotBlank()) {
+                lines += """TEXT 50,$y,"1",0,1,1,"@ Rp ${formatRupiah(price)}""""
+                y += 25
+    
+                // Subtotal barang
+                lines += """TEXT 50,$y,"1",0,1,1,"Subtotal: Rp ${formatRupiah(subtotal)}""""
+                y += 32
+            } else {
+                y += 10
             }
-            if (y > 850) break
+    
+            // Garis pemisah antarbarang
+            if (i < items.length() - 1) {
+                lines += """TEXT 30,$y,"1",0,1,1,"--------------------------------""""
+                y += 25
+            }
+    
+            // Batasi panjang cetakan agar tidak terlalu jauh
+            if (y > 750) break
         }
-        val total = firstString(o, "total", "grand_total", "amount")
-        if (total.isNotBlank()) {
-            lines += """TEXT 30,$y,"2",0,1,1,"TOTAL: ${safe(total)}""""
-            y += 40
-        }
+    
+        // Jika API menyediakan total, gunakan total dari API.
+        // Jika tidak tersedia, hitung dari harga item.
+        val totalText = firstString(
+            o, "total", "grand_total", "amount"
+        )
+    
+        val totalApi = totalText
+            .replace(Regex("[^0-9]"), "")
+            .toLongOrNull()
+    
+        val total = totalApi ?: grandTotal
+    
+        y += 15
+        lines += """TEXT 30,$y,"2",0,1,1,"--------------------------------""""
+        y += 35
+    
+        // Total pesanan
+        lines += """TEXT 30,$y,"3",0,1,1,"TOTAL""""
+        y += 40
+        lines += """TEXT 30,$y,"3",0,1,1,"Rp ${formatRupiah(total)}""""
+        y += 65
+    
+        // Jarak sebelum ucapan terima kasih
         lines += """TEXT 30,$y,"2",0,1,1,"Terima kasih""""
+        y += 35
+    
         lines += "PRINT 1,1"
+    
         return lines.joinToString("\r\n") + "\r\n"
+    }
+    
+    private fun formatRupiah(value: Long): String {
+        return value.toString()
+            .reversed()
+            .chunked(3)
+            .joinToString(".")
+            .reversed()
     }
 
     private fun firstString(o: JSONObject, vararg keys: String): String {
