@@ -2,6 +2,8 @@
 
 Aplikasi Android memeriksa status printer lalu polling API setiap 5 detik, kemudian mengirim perintah TSPL ke printer Bluetooth Classic (SPP).
 
+- Kolom URL API kosong pada pemasangan baru. URL yang diketik disimpan otomatis di perangkat dan tetap terisi saat aplikasi dibuka kembali, meskipun aplikasi ditutup tanpa menekan tombol Mulai.
+
 ## Penting sebelum dipakai
 - Versi ini belum diuji ulang pada printer fisik setelah penambahan pemeriksaan status kertas.
 - Template cetak awal memakai TSPL dengan ukuran sementara `80 x 100 mm`.

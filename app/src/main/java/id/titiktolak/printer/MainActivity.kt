@@ -77,13 +77,21 @@ class MainActivity : Activity() {
             textSize = 14f
             setSingleLine(true)
             inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
-            setText(getPreferences(0).getString("api_url", "https://titiktolak.com/printer-test/api.php"))
+            setText(getPreferences(0).getString("api_url", ""))
             setTextColor(ink)
             setHintTextColor(Color.rgb(151, 161, 176))
             setPadding(dp(14), dp(12), dp(14), dp(12))
             background = rounded(Color.rgb(248, 250, 253), Color.rgb(222, 228, 237), 10)
         }
         connectionCard.addView(apiInput, matchWrap())
+        // Simpan URL setiap kali berubah agar tetap ada meski aplikasi ditutup tanpa menekan Mulai.
+        apiInput.addTextChangedListener(object : android.text.TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) = Unit
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
+                getPreferences(0).edit().putString("api_url", s?.toString().orEmpty()).apply()
+            }
+            override fun afterTextChanged(s: android.text.Editable?) = Unit
+        })
 
         connectionCard.addView(fieldLabel("PRINTER BLUETOOTH"))
         macInput = EditText(this).apply {
@@ -125,7 +133,7 @@ class MainActivity : Activity() {
         }
         statusCard.addView(status)
         statusCard.addView(TextView(this).apply {
-            text = "Polling target 1 detik. API dijeda jika kertas habis atau status printer tidak terbaca."
+            text = "Polling setiap 5 detik. API dijeda jika kertas habis atau status printer tidak terbaca."
             textSize = 12f
             setTextColor(muted)
         })
